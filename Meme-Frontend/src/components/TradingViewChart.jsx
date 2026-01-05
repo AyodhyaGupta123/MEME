@@ -23,10 +23,13 @@ const TradingViewChart = () => {
               theme: "dark",
               style: "1",
               locale: "en",
+              toolbar_bg: "#15181C",
               enable_publishing: false,
               backgroundColor: "#0B0E11",
               gridColor: "rgba(38, 41, 48, 0.3)",
-              hide_top_toolbar: false,
+              // Mobile optimization: Top toolbar ko mobile par hide ya simplify kar sakte hain
+              hide_top_toolbar: window.innerWidth < 768, 
+              hide_side_toolbar: window.innerWidth < 1024,
               save_image: false,
               container_id: "tradingview_chart"
             });
@@ -37,17 +40,17 @@ const TradingViewChart = () => {
     };
 
     loadScript();
-
-    return () => {
-    };
   }, []);
 
   return (
-    <div 
-      className="w-full h-screen bg-[#0B0E11] overflow-hidden"
-    >
+
+    <div className="w-full h-[350px] md:h-full md:flex-1 bg-[#0B0E11] border-b border-[#262930] overflow-hidden">
       <div className="tradingview-widget-container h-full w-full">
-        <div id="tradingview_chart" ref={containerRef} style={{ height: '100%', width: '100%' }}></div>
+        <div 
+          id="tradingview_chart" 
+          ref={containerRef} 
+          style={{ height: '100%', width: '100%' }}
+        ></div>
       </div>
     </div>
   );

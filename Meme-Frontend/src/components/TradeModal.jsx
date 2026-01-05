@@ -6,87 +6,84 @@ const TradeModal = ({ isOpen, onClose, orderType, inputPrice }) => {
   const isBuy = orderType === 'buy';
 
   return (
-    <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center"
-      style={{ pointerEvents: isOpen ? 'auto' : 'none' }}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
+      {/* Backdrop with Blur */}
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        style={{ 
-          opacity: isOpen ? 1 : 0,
-          transition: 'opacity 0.3s'
-        }}
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       ></div>
+
+      {/* Modal Content */}
       <div 
-        className="relative bg-[#15181C] border border-[#262930] p-6 rounded-xl w-full max-w-sm shadow-2xl max-[768px]:mx-4 max-[768px]:w-[calc(100%-2rem)]"
-        style={{ 
-          opacity: isOpen ? 1 : 0, 
-          transform: isOpen ? 'scale(1)' : 'scale(0.95)', 
-          transition: 'all 0.25s ease-out' 
-        }}
+        className={`
+          relative bg-[#15181C] border-[#262930] w-full shadow-2xl transition-all duration-300 ease-out
+          /* Mobile: Bottom Sheet Styles */
+          fixed bottom-0 rounded-t-2xl border-t p-5 translate-y-0
+          /* Desktop: Center Modal Styles */
+          md:relative md:bottom-auto md:rounded-xl md:border md:max-w-sm md:p-6 md:translate-y-0
+          ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 md:scale-95'}
+        `}
       >
+        {/* Mobile Handle (The little line at the top) */}
+        <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-4 md:hidden"></div>
+
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold">Confirm Order</h3>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              strokeWidth="2" 
-              stroke="currentColor" 
-              className="w-5 h-5"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                d="M6 18L18 6M6 6l12 12" 
-              />
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            Confirm Order
+            <span className={`text-[10px] px-2 py-0.5 rounded ${isBuy ? 'bg-[#0ECB81]/10 text-[#0ECB81]' : 'bg-[#F6465D]/10 text-[#F6465D]'}`}>
+              {isBuy ? 'LONG' : 'SHORT'}
+            </span>
+          </h3>
+          <button onClick={onClose} className="text-slate-500 hover:text-white p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
+
         <div className="space-y-4 mb-8 font-mono text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-slate-400">Contract</span>
-            <span className="font-bold">BTCUSDT PERP</span>
+            <span className="font-bold text-white">BTCUSDT PERP</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Type</span>
-            <span>Limit Order</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Side</span>
-            <span className={`font-bold ${isBuy ? 'text-[#0ECB81]' : 'text-[#F6465D]'}`}>
-              {isBuy ? 'BUY / LONG' : 'SELL / SHORT'}
-            </span>
-          </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-slate-400">Price</span>
-            <span>{inputPrice}</span>
+            <span className="text-white">{inputPrice} USDT</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-slate-400">Amount</span>
-            <span>0.500 BTC</span>
+            <span className="text-white">0.500 BTC</span>
           </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Leverage</span>
+            <span className="text-[#FCD535]">Cross 20x</span>
+          </div>
+          
           <div className="h-px bg-[#262930] my-4"></div>
-          <div className="flex justify-between text-base font-bold">
-            <span>Total Cost</span>
-            <span>33,725.00 USDT</span>
+          
+          <div className="flex justify-between items-end">
+            <span className="text-slate-400">Estimated Margin</span>
+            <div className="text-right">
+              <p className="text-base font-bold text-white">1,687.25 USDT</p>
+              <p className="text-[10px] text-slate-500">Incl. Fees</p>
+            </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+
+        {/* Buttons: Stacked on small mobile, Side-by-side on desktop */}
+        <div className="flex flex-col-reverse sm:grid sm:grid-cols-2 gap-3">
           <button 
             onClick={onClose}
-            className="py-3 bg-[#0B0E11] border border-[#262930] rounded-lg font-bold text-sm text-slate-400 hover:text-white hover:border-white/20 transition-all"
+            className="py-3.5 bg-[#262930] rounded-xl font-bold text-sm text-slate-300 hover:bg-[#2f333b] transition-all"
           >
             Cancel
           </button>
           <button 
-            className={`py-3 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity ${
+            className={`py-3.5 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-all ${
               isBuy ? 'bg-[#0ECB81] text-black' : 'bg-[#F6465D] text-white'
             }`}
           >
-            {isBuy ? 'Confirm Buy' : 'Confirm Sell'}
+            {isBuy ? 'Confirm Buy / Long' : 'Confirm Sell / Short'}
           </button>
         </div>
       </div>

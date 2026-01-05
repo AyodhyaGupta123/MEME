@@ -12,7 +12,10 @@ const Orderbook = ({ currentPrice }) => {
       let askTotal = 0;
       let bidTotal = 0;
 
-      for (let i = 0; i < 15; i++) {
+      // Mobile par 15 ki jagah 8-10 rows kaafi hoti hain screen space bachane ke liye
+      const rowCount = window.innerWidth < 768 ? 10 : 15;
+
+      for (let i = 0; i < rowCount; i++) {
         const askSize = 0.05 + Math.random() * 1.4;
         askTotal += askSize;
         newAsks.unshift({
@@ -40,14 +43,18 @@ const Orderbook = ({ currentPrice }) => {
   }, [currentPrice]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 border-b border-[#262930]">
-      <div className="px-3 py-2 flex justify-between text-[11px] font-medium text-slate-400 border-b border-[#262930] max-[480px]:text-[10px]">
-        <span>Price(USDT)</span>
-        <span>Amount(BTC)</span>
-        <span>Sum</span>
+    <div className="flex-1 flex flex-col min-h-0 border-b border-[#262930] bg-[#15181C]">
+      {/* Table Headers */}
+      <div className="px-3 py-2 flex justify-between text-[10px] sm:text-[11px] font-medium text-slate-500 border-b border-[#262930] uppercase tracking-tighter">
+        <span className="w-1/3 text-left">Price</span>
+        <span className="w-1/3 text-right">Size</span>
+        <span className="w-1/3 text-right">Sum</span>
       </div>
+
       <div className="flex-1 overflow-hidden font-mono text-[11px] relative">
         <div className="absolute inset-0 flex flex-col">
+          
+          {/* Asks (Sellers - Red) */}
           <div className="flex-1 flex flex-col-reverse overflow-hidden text-[#F6465D]">
             {asks.map((ask, i) => (
               <OrderbookRow 
@@ -59,12 +66,18 @@ const Orderbook = ({ currentPrice }) => {
               />
             ))}
           </div>
-          <div className="py-1 text-center border-y border-[#262930] bg-[#0B0E11] font-bold text-base text-[#0ECB81]">
-            {currentPrice.toFixed(2)} 
-            <span className="text-[10px] text-slate-500 ml-1">
-              ${currentPrice.toFixed(2)}
+
+          {/* Current Price Highlight (Center) */}
+          <div className="py-2 px-3 flex items-center justify-between border-y border-[#262930] bg-[#0B0E11]/80 backdrop-blur-sm">
+            <span className="text-sm sm:text-base font-bold text-[#0ECB81]">
+              {currentPrice.toFixed(2)}
+            </span>
+            <span className="text-[10px] text-slate-500">
+              Last Price
             </span>
           </div>
+
+          {/* Bids (Buyers - Green) */}
           <div className="flex-1 overflow-hidden text-[#0ECB81]">
             {bids.map((bid, i) => (
               <OrderbookRow 

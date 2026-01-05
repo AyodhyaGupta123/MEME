@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+
+// Pages
+import Login from './pages/Login';
+import Register from './pages/Register';
+
+// Dashboard Components
 import Header from './components/Header';
 import LeftSidebar from './components/LeftSidebar';
 import ChartHeader from './components/ChartHeader';
@@ -18,7 +25,6 @@ const App = () => {
     const interval = setInterval(() => {
       setCurrentPrice(prev => prev + (Math.random() - 0.5) * 6);
     }, 800);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -27,66 +33,58 @@ const App = () => {
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
-
   return (
     <>
       <style>{`
-        body {
-          background-color: #0B0E11;
-          color: #EAECEF;
-          height: 100vh;
-          overflow: hidden;
-          margin: 0;
-          font-family: 'Inter', sans-serif;
-        }
-        
-        ::-webkit-scrollbar { 
-          width: 4px; 
-          height: 4px; 
-        }
-        
-        ::-webkit-scrollbar-thumb { 
-          background: #262930; 
-          border-radius: 2px; 
-        }
-        
-        ::-webkit-scrollbar-track { 
-          background: transparent; 
+        body { 
+          background-color: #0B0E11; 
+          color: #EAECEF; 
+          height: 100vh; 
+          overflow: hidden; 
+          margin: 0; 
+          font-family: 'Inter', sans-serif; 
         }
       `}</style>
 
-      <div className="antialiased flex flex-col h-screen">
-        <TradeModal 
-          isOpen={isModalOpen} 
-          onClose={handleCloseModal} 
-          orderType={orderType}
-          inputPrice={inputPrice}
-        />
+      {/* Global Components (Modal) */}
+      <TradeModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        orderType={orderType}
+        inputPrice={inputPrice}
+      />
 
-        <Header />
+      <Routes>
+        {/* Auth Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-        <div className="flex-1 flex overflow-hidden max-[1280px]:flex-col">
-          <LeftSidebar />
-
-          <div className="flex-1 flex flex-col min-w-0">
-            <ChartHeader currentPrice={currentPrice} />
-            <TradingViewChart />
-            <PositionsTable />
+        {/* Dashboard Route */}
+        <Route path="/dashboard" element={
+          <div className="antialiased flex flex-col h-screen">
+            <Header />
+            <div className="flex-1 flex overflow-hidden max-[1280px]:flex-col">
+              <LeftSidebar />
+              <div className="flex-1 flex flex-col min-w-0">
+                <ChartHeader currentPrice={currentPrice} />
+                <TradingViewChart />
+                <PositionsTable />
+              </div>
+              <aside className="w-72 bg-[#15181C] border-l border-[#262930] flex flex-col shrink-0 max-[1280px]:w-full">
+                <Orderbook currentPrice={currentPrice} />
+                <TradePanel 
+                  onOpenModal={handleOpenModal}
+                  inputPrice={inputPrice}
+                  setInputPrice={setInputPrice}
+                />
+              </aside>
+            </div>
           </div>
+        } />
 
-          <aside className="w-72 bg-[#15181C] border-l border-[#262930] flex flex-col shrink-0 max-[1280px]:w-full max-[1280px]:border-l-0 max-[1280px]:border-t max-[1280px]:border-t-[#262930]">
-            <Orderbook currentPrice={currentPrice} />
-            <TradePanel 
-              onOpenModal={handleOpenModal}
-              inputPrice={inputPrice}
-              setInputPrice={setInputPrice}
-            />
-          </aside>
-        </div>
-      </div>
+        {/* Redirect empty path to login */}
+        <Route path="/" element={<Navigate to="/login" />} />
+      </Routes>
     </>
   );
 };
