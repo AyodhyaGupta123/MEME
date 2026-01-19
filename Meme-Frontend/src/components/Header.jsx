@@ -1,80 +1,204 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [wallet, setWallet] = useState({ usdBalance: 0 });
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState(null);
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const WS_URL = "wss://stream.binance.com:9443/ws/btcusdt@trade";
+  const [btcPrice, setBtcPrice] = useState("0.00");
+
+  useEffect(() => {
+    const btcWs = new WebSocket(WS_URL);
+    btcWs.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setBtcPrice(parseFloat(data.p).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }));
+    };
+    return () => btcWs.close();
+  }, []);
+
+  const profileRef = useRef(null);
+  const notificationRef = useRef(null);
+
+  // --- REAL-TIME DATA SYNC LOGIC ---
+  const fetchHeaderData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const storedUser = JSON.parse(localStorage.getItem('user_data'));
+
+      // 1. Storage se turant data set karein (No Loading Flicker)
+      if (storedUser) {
+        setUser({ 
+          name: storedUser.name, 
+          email: storedUser.email 
+        });
+        setWallet({ usdBalance: storedUser.balance || 0 });
+      }
+
+      // 2. API se fresh data fetch karein
+      if (token) {
+        const response = await fetch(`${API_BASE_URL}/header/info`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (data.success) {
+          setUser(data.user);
+          setWallet(data.wallet);
+          setNotifications(data.notifications || []);
+          setUnreadCount((data.notifications || []).filter(n => !n.read).length);
+          
+          // Update storage with latest balance
+          localStorage.setItem('user_data', JSON.stringify({
+            name: data.user.name || data.user.email.split('@')[0],
+            email: data.user.email,
+            balance: data.wallet.usdBalance
+          }));
+        }
+      }
+    } catch (err) { 
+      console.error("Header Error:", err); 
+    }
+  };
+
+  useEffect(() => {
+    fetchHeaderData();
+    window.addEventListener('storage', fetchHeaderData);
+    return () => window.removeEventListener('storage', fetchHeaderData);
+  }, []);
+
+  const handleQuickTrade = (side) => {
+    const currentPrice = parseFloat(btcPrice.replace(/,/g, ''));
+    const cost = (currentPrice * 0.01) / 20;
+
+    if (wallet.usdBalance < cost) {
+      alert("Insufficient Balance!");
+      return;
+    }
+
+    const newBalance = (wallet.usdBalance - cost).toFixed(2);
+    const storedUser = JSON.parse(localStorage.getItem('user_data'));
+    if (storedUser) {
+      storedUser.balance = parseFloat(newBalance);
+      localStorage.setItem('user_data', JSON.stringify(storedUser));
+    }
+    
+    setModalData({ side, price: btcPrice, margin: cost.toFixed(2) });
+    setShowModal(true);
+    setIsProfileOpen(false);
+    window.dispatchEvent(new Event('storage')); 
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setIsProfileOpen(false);
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) setIsNotificationOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user_data');
+    window.location.href = '/login';
+  };
+
+  const getInitials = (userData) => {
+    if (userData?.name) return userData.name.charAt(0).toUpperCase();
+    if (userData?.email) return userData.email.charAt(0).toUpperCase();
+    return '?';
+  };
 
   return (
-    <header className="h-14 bg-[#15181C] border-b border-[#262930] flex items-center justify-between px-4 shrink-0 relative z-50">
+    <header className="h-14 bg-[#15181C] border-b border-[#262930] flex items-center justify-between px-2 sm:px-4 shrink-0 sticky top-0 z-[100]">
       
-      {/* Left: Logo and Desktop Nav */}
-      <div className="flex items-center gap-4 sm:gap-6">
-        {/* Hamburger (Mobile Only) */}
-        <button 
-          className="md:hidden text-slate-400"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
-
-        <div className="flex items-center gap-2 font-bold text-[#FCD535] tracking-wider text-sm sm:text-base">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
-          </svg>
-          <span className="hidden xs:inline">MEME COIN</span>
-          <span className="xs:hidden">MEME</span>
-        </div>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
-          <a href="#" className="text-white border-b-2 border-[#FCD535] h-14 flex items-center">Markets</a>
-          <a href="#" className="hover:text-white transition-colors h-14 flex items-center">Trade</a>
-          <a href="#" className="hover:text-white transition-colors h-14 flex items-center">Derivatives</a>
-        </nav>
-      </div>
-
-      {/* Right: Price, Status and Wallet */}
-      <div className="flex items-center gap-2 sm:gap-4 font-mono text-sm">
-        {/* Hide BTC price on very small screens */}
-        <div className="hidden sm:flex gap-4 text-xs">
-          <span>BTC <span className="text-[#0ECB81]">$67,450</span></span>
-        </div>
-        
-        <div className="hidden sm:block h-6 w-px bg-[#262930]"></div>
-
-        <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-400">
-          <div 
-            className="w-[6px] h-[6px] bg-[#0ECB81] rounded-full animate-pulse shadow-[0_0_8px_#0ECB81]"
-          ></div> 
-          <span className="hidden xs:inline">Stable</span>
-        </div>
-
-        <button className="bg-[#FCD535] text-black px-3 sm:px-4 py-1.5 rounded text-[10px] sm:text-xs font-bold hover:opacity-90">
-          Wallet
-        </button>
-      </div>
-
-      {/* Mobile Menu Dropdown */}
-      {isMenuOpen && (
-        <div className="absolute top-14 left-0 w-full bg-[#15181C] border-b border-[#262930] flex flex-col p-4 gap-4 md:hidden">
-          <a href="#" className="text-white">Markets</a>
-          <a href="#" className="text-slate-400">Trade</a>
-          <a href="#" className="text-slate-400">Derivatives</a>
-          <div className="h-px bg-[#262930] w-full"></div>
-          <span className="text-xs text-slate-400">BTC Price: <span className="text-[#0ECB81]">$67,450</span></span>
+      {/* TRADE SUCCESS MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1E2329] w-full max-w-[280px] border border-[#2B3139] rounded-xl p-5 shadow-2xl">
+            <div className={`w-10 h-10 rounded-full mx-auto flex items-center justify-center mb-3 ${modalData.side === 'buy' ? 'bg-[#0ECB81]/20 text-[#0ECB81]' : 'bg-[#F6465D]/20 text-[#F6465D]'}`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 className="text-center font-bold text-white text-sm uppercase">Quick {modalData.side} Placed</h3>
+            <div className="mt-4 space-y-2 bg-[#15181C] p-3 rounded-lg border border-white/5 font-mono text-[10px]">
+              <div className="flex justify-between"><span className="text-slate-500">Price</span><span className="text-white">${modalData.price}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Margin</span><span className="text-[#FCD535]">${modalData.margin}</span></div>
+            </div>
+            <button onClick={() => setShowModal(false)} className="w-full mt-4 py-2 bg-[#2B3139] hover:bg-[#363C45] rounded-lg text-xs font-bold text-white transition-all">Dismiss</button>
+          </div>
         </div>
       )}
 
-      <style>{`
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.5; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-pulse { animation: pulse 2s infinite; }
-        @media (max-width: 400px) { .xs:hidden { display: none; } .xs:inline { display: inline; } }
-      `}</style>
+      {/* Left Section */}
+      <div className="flex items-center gap-3 shrink-0">
+        <Link to="/" className="flex items-center gap-1 group">
+          <span className="font-black text-[#FCD535] tracking-tighter text-lg uppercase italic">PASA<span className="text-white">MEME</span></span>
+        </Link>
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-[#1E2228] rounded border border-white/5 font-mono text-[10px] sm:text-xs">
+          <span className="text-[#0ECB81] font-bold">${btcPrice}</span>
+        </div>
+      </div>
+
+      {/* Right Section */}
+      <div className="flex items-center gap-1 sm:gap-3">
+        <button onClick={() => navigate('/wallet')} className="p-2 text-slate-400 hover:text-[#FCD535] relative group">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M20 7V5C20 3.89543 19.1046 3 18 3H6C4.89543 3 4 3.89543 4 5V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V17H22V7H20ZM18 19H6V5H18V7H11C9.89543 7 9 7.89543 9 9V15C9 16.1046 9.89543 17 11 17H18V19ZM11 9H19V15H11V9ZM13 11V13H17V11H13Z" /></svg>
+        </button>
+
+        <div className="relative" ref={notificationRef}>
+          <button onClick={() => setIsNotificationOpen(!isNotificationOpen)} className="p-2 text-slate-400 hover:text-white relative">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31M5 19.5A2.5 2.5 0 017.5 22h9a2.5 2.5 0 010-5" /></svg>
+            {unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full border border-[#15181C]"></span>}
+          </button>
+        </div>
+
+        {/* PROFILE SECTION */}
+        <div className="relative" ref={profileRef}>
+          <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-[#FCD535] text-black flex items-center justify-center font-bold text-sm ring-2 ring-black">
+              {getInitials(user)}
+            </div>
+          </button>
+
+          {isProfileOpen && (
+            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1E2228] border border-[#262930] rounded-xl shadow-2xl overflow-hidden z-50">
+              <div className="p-4 bg-[#15181C] border-b border-[#262930]">
+                {/* Agar name nahi hai toh User dikhayega, Loading nahi */}
+                <p className="text-[13px] font-bold text-white truncate">{user?.name || "User"}</p>
+                <p className="text-[10px] text-slate-400 truncate opacity-80">{user?.email}</p>
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+                   <span className="text-[10px] text-slate-500 font-medium">Spot Balance</span>
+                   <p className="text-[12px] text-[#0ECB81] font-mono font-bold">
+                     ${wallet?.usdBalance?.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                   </p>
+                </div>
+              </div>
+
+              <div className="p-3 grid grid-cols-2 gap-2 border-b border-[#262930]">
+                <button onClick={() => handleQuickTrade('buy')} className="bg-[#0ECB81] hover:bg-[#0ECB81]/80 text-black text-[11px] font-bold py-2 rounded-lg transition-all uppercase">Buy</button>
+                <button onClick={() => handleQuickTrade('sell')} className="bg-[#F6465D] hover:bg-[#F6465D]/80 text-white text-[11px] font-bold py-2 rounded-lg transition-all uppercase">Sell</button>
+              </div>
+
+              <div className="p-1">
+                <button onClick={() => { navigate('/wallet'); setIsProfileOpen(false); }} className="w-full text-left px-4 py-2.5 text-[11px] text-slate-300 hover:bg-[#262930] rounded">My Assets</button>
+                <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-[11px] text-red-400 hover:bg-red-900/10 rounded">Logout</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </header>
   );
 };

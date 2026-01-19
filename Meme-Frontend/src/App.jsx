@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import WalletPage from './pages/WalletPage'; 
 
 // Dashboard Components
 import Header from './components/Header';
@@ -14,6 +15,7 @@ import PositionsTable from './components/PositionsTable';
 import Orderbook from './components/Orderbook';
 import TradePanel from './components/TradePanel';
 import TradeModal from './components/TradeModal';
+import CoinsList from './components/CoinsList';
 
 const App = () => {
   const [currentPrice, setCurrentPrice] = useState(67450);
@@ -52,7 +54,7 @@ const App = () => {
         onClose={() => setIsModalOpen(false)} 
         orderType={orderType}
         inputPrice={inputPrice}
-      />
+        />
 
       <Routes>
         {/* Auth Routes */}
@@ -81,6 +83,10 @@ const App = () => {
             </div>
           </div>
         } />
+
+        {/* Wallet & Coins */}
+        <Route path="/wallet" element={<WalletPage />} />
+        <Route path="/coin" element={<CoinsList />} />
 
         {/* Redirect empty path to login */}
         <Route path="/" element={<Navigate to="/login" />} />

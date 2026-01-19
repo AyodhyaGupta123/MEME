@@ -1,86 +1,145 @@
-import React from 'react';
+import React, { useState, useEffect } from "react";
 
-const TradePanel = ({ onOpenModal, inputPrice, setInputPrice }) => {
+const TradePanel = ({ inputPrice, setInputPrice }) => {
+  const [size, setSize] = useState("");
+  const [leverage, setLeverage] = useState(20);
+  const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState(null);
+
+  // --- REAL PRICE AUTO-UPDATE LOGIC ---
+  // Jab bhi props se inputPrice (BTC Live) change hoga, ye box ko update karega
+  useEffect(() => {
+    if (inputPrice) {
+      setInputPrice(inputPrice);
+    }
+  }, [inputPrice, setInputPrice]);
+
+  // Sync Balance
+  useEffect(() => {
+    const updateLocalBalance = () => {
+      const storedUser = JSON.parse(localStorage.getItem('user_data')) || { balance: 5000 };
+      setBalance(storedUser.balance);
+    };
+    updateLocalBalance();
+    window.addEventListener('storage', updateLocalBalance);
+    return () => window.removeEventListener('storage', updateLocalBalance);
+  }, []);
+
+  const currentPrice = inputPrice ? parseFloat(inputPrice.toString().replace(/,/g, '')) : 0;
+  const totalCost = (currentPrice * Number(size)).toFixed(2);
+  const marginRequired = (totalCost / leverage).toFixed(2);
+  const isInsufficient = parseFloat(marginRequired) > balance;
+
+  const handlePercentage = (pct) => {
+    if (!currentPrice || currentPrice <= 0) return;
+    const calculatedSize = ((balance * (pct / 100) * leverage) / currentPrice).toFixed(3);
+    setSize(calculatedSize);
+  };
+
+  const placeTrade = async (side) => {
+    if (!currentPrice || !size || size <= 0) return alert("Enter Size");
+    if (isInsufficient) return alert("Insufficient Balance!");
+
+    setLoading(true);
+    setTimeout(() => {
+      const newBalance = (balance - marginRequired).toFixed(2);
+      const storedUser = JSON.parse(localStorage.getItem('user_data')) || {};
+      storedUser.balance = parseFloat(newBalance);
+      localStorage.setItem('user_data', JSON.stringify(storedUser));
+      setBalance(parseFloat(newBalance));
+
+      setModalData({ side, price: currentPrice.toLocaleString(), size, margin: marginRequired });
+      setShowModal(true);
+      setLoading(false);
+      setSize("");
+      window.dispatchEvent(new Event('storage'));
+    }, 800);
+  };
+
   return (
-    <div className="p-4 flex flex-col bg-[#15181C] h-full">
-      {/* Order Type Switcher (Limit/Market) */}
-      <div className="flex bg-[#0B0E11] p-1 rounded-lg mb-5 text-[11px] sm:text-xs">
-        <button className="flex-1 py-2 font-bold bg-[#262930] rounded-md text-[#FCD535] shadow-lg transition-all">
-          Limit
-        </button>
-        <button className="flex-1 py-2 font-medium text-slate-500 hover:text-white transition-colors">
-          Market
-        </button>
-      </div>
-
-      {/* Inputs Section */}
-      <div className="space-y-4 mb-6">
-        {/* Price Input */}
-        <div className="group flex flex-col gap-1.5">
-          <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Price (USDT)</label>
-          <div className="flex items-center justify-between bg-[#0B0E11] border border-[#262930] group-focus-within:border-[#FCD535]/50 rounded-xl px-4 py-3 sm:py-2 transition-all">
-            <input 
-              type="number" 
-              value={inputPrice} 
-              onChange={(e) => setInputPrice(e.target.value)}
-              className="bg-transparent w-full font-mono text-base sm:text-sm text-white border-none outline-none focus:ring-0"
-              placeholder="0.00"
-            />
-            <span className="text-slate-600 text-[10px] font-bold">USDT</span>
+    <div className="flex flex-col h-full bg-[#15181C] text-white border-l border-[#2B3139] w-full relative">
+      
+      {/* SUCCESS MODAL */}
+      {showModal && (
+        <div className="fixed lg:absolute inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1E2329] border border-[#2B3139] rounded-2xl p-6 w-full max-w-[280px] shadow-2xl">
+            <div className={`w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-4 ${modalData.side === 'buy' ? 'bg-[#0ECB81]/20 text-[#0ECB81]' : 'bg-[#F6465D]/20 text-[#F6465D]'}`}>
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 className="text-center font-bold text-white uppercase tracking-tight">Order Placed</h3>
+            <div className="my-4 space-y-2 bg-[#15181C] p-3 rounded-lg border border-white/5 font-mono text-[10px]">
+              <div className="flex justify-between"><span className="text-slate-500 font-bold uppercase">Price</span><span className="text-white">${modalData.price}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500 font-bold uppercase">Margin</span><span className="text-[#FCD535]">${modalData.margin}</span></div>
+            </div>
+            <button onClick={() => setShowModal(false)} className="w-full py-2 bg-[#FCD535] text-black rounded-lg font-bold text-xs uppercase">Dismiss</button>
           </div>
         </div>
+      )}
 
-        {/* Size Input */}
-        <div className="group flex flex-col gap-1.5">
-          <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Size (BTC)</label>
-          <div className="flex items-center justify-between bg-[#0B0E11] border border-[#262930] group-focus-within:border-[#FCD535]/50 rounded-xl px-4 py-3 sm:py-2 transition-all">
-            <input 
-              type="number" 
-              placeholder="0.000" 
-              className="bg-transparent w-full font-mono text-base sm:text-sm text-white border-none outline-none focus:ring-0"
-            />
-            <span className="text-slate-600 text-[10px] font-bold">BTC</span>
-          </div>
+      {/* TRADE INPUTS */}
+      <div className="p-4 space-y-4">
+        <div className="flex justify-between text-[11px]">
+          <span className="text-slate-500 font-bold uppercase">Available</span>
+          <span className="text-white font-mono">${balance.toLocaleString()}</span>
         </div>
 
-        {/* Account Info Labels */}
-        <div className="flex justify-between items-center px-1">
-          <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 uppercase">Available</span>
-            <span className="text-xs text-white font-mono">4,520.25 USDT</span>
+        {/* --- REAL-TIME PRICE BOX --- */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] text-slate-500 font-black uppercase">Price (USDT)</label>
+            <span className="text-[9px] text-[#0ECB81] font-bold tracking-tighter">● LIVE STREAMING</span>
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] text-slate-500 uppercase">Leverage</span>
-            <button className="text-[10px] text-white bg-[#262930] px-2 py-0.5 rounded-md hover:bg-[#32363e]">
-              Cross 20x
-            </button>
+          <input 
+            type="text" 
+            value={inputPrice} 
+            readOnly // Optional: readOnly rakhein taaki live update disturb na ho
+            className="w-full bg-[#1E2329] p-3 rounded-xl border border-white/5 text-[#0ECB81] font-mono font-bold outline-none shadow-inner" 
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-500 font-black uppercase">Size (BTC)</label>
+          <input 
+            type="number" 
+            placeholder="0.000"
+            value={size} 
+            onChange={(e) => setSize(e.target.value)} 
+            className="w-full bg-[#1E2329] p-3 rounded-xl border border-white/5 focus:border-[#FCD535]/50 outline-none transition-all font-mono" 
+          />
+        </div>
+
+        {/* Leverage Slider */}
+        <div className="space-y-2 py-2">
+          <div className="flex justify-between text-[10px] font-bold">
+            <span className="text-slate-500 uppercase">Leverage</span>
+            <span className="text-[#FCD535]">{leverage}x</span>
+          </div>
+          <input type="range" min="1" max="125" value={leverage} onChange={(e) => setLeverage(e.target.value)} className="w-full accent-[#FCD535] h-1.5 bg-[#2B3139] rounded-lg" />
+        </div>
+
+        {/* Percent Buttons */}
+        <div className="grid grid-cols-4 gap-2">
+          {[25, 50, 75, 100].map(p => (
+            <button key={p} onClick={() => handlePercentage(p)} className="bg-[#2B3139] py-2 rounded-lg text-[10px] font-bold hover:bg-[#FCD535] hover:text-black transition-all">{p}%</button>
+          ))}
+        </div>
+
+        {/* Calculation Info */}
+        <div className="p-3 bg-white/5 rounded-xl border border-white/[0.03] mt-2">
+          <div className="flex justify-between text-[10px]">
+            <span className="text-slate-500 font-bold uppercase">Margin Required</span>
+            <span className={`font-mono font-bold ${isInsufficient ? 'text-red-500 animate-pulse' : 'text-[#FCD535]'}`}>{marginRequired} USDT</span>
           </div>
         </div>
       </div>
 
-      {/* Action Buttons: Responsive Grid */}
-      <div className="grid grid-cols-2 gap-3 mt-auto md:mt-0">
-        <button 
-          onClick={() => onOpenModal('buy')}
-          className="flex flex-col items-center justify-center py-3 bg-[#0ECB81] hover:brightness-110 active:scale-95 text-black rounded-xl transition-all"
-        >
-          <span className="text-sm font-black uppercase">Buy</span>
-          <span className="text-[9px] font-bold opacity-70">Long</span>
-        </button>
-        
-        <button 
-          onClick={() => onOpenModal('sell')}
-          className="flex flex-col items-center justify-center py-3 bg-[#F6465D] hover:brightness-110 active:scale-95 text-white rounded-xl transition-all"
-        >
-          <span className="text-sm font-black uppercase">Sell</span>
-          <span className="text-[9px] font-bold opacity-70">Short</span>
-        </button>
+      {/* Buttons */}
+      <div className="p-4 mt-auto border-t border-[#2B3139] flex gap-2 bg-[#15181C]">
+        <button onClick={() => placeTrade("buy")} disabled={loading} className="flex-1 bg-[#0ECB81] hover:brightness-110 py-4 rounded-xl font-black text-black text-xs uppercase active:scale-95 transition-all">Buy / Long</button>
+        <button onClick={() => placeTrade("sell")} disabled={loading} className="flex-1 bg-[#F6465D] hover:brightness-110 py-4 rounded-xl font-black text-white text-xs uppercase active:scale-95 transition-all">Sell / Short</button>
       </div>
-
-      {/* Additional Mobile Helper (Optional) */}
-      <p className="text-[9px] text-slate-600 text-center mt-4 hidden sm:block">
-        Trading involves risk. Always check your liquidation price.
-      </p>
     </div>
   );
 };
