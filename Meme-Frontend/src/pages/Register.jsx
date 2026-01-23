@@ -40,14 +40,13 @@ const Register = () => {
       }
 
       // API Call
-      const response = await fetch(`${config.API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${config.API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, email, password }),
       });
-
       const data = await response.json();
 
       if (!response.ok) {
@@ -65,7 +64,7 @@ const Register = () => {
     } catch (err) {
       console.error("Registration error:", err);
       setError(
-        "Server se connect nahi ho paya. Kripya phir se koshish karein."
+        "Server se connect nahi ho paya. Kripya phir se koshish karein.",
       );
       setLoading(false);
     }
