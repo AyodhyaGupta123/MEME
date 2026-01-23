@@ -1,0 +1,25 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "\"meme backend\"",
+  "keywords": [
+    "\"production",
+    "express",
+    "node",
+    "mongodb\""
+  ],
+  "license": "ISC",
+  "author": "\"AH\"",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "\"npm start\""
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "mongoose": "^9.1.2"
+  }
+}
