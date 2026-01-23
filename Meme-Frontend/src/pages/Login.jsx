@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import config from "../config/config";
+
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -20,7 +22,7 @@ const Login = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${config.API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -36,24 +38,24 @@ const Login = () => {
 
       // 1. Auth Token Save Karein
       localStorage.setItem("authToken", data.token);
-      
+
       // 2. User Data (Real Name fallback to Email)
       // Agar backend se 'name' nahi aa raha, toh hum email se naam nikal lenge
-      const displayName = data.user.name || data.user.email.split('@')[0];
-      
+      const displayName = data.user.name || data.user.email.split("@")[0];
+
       const userData = {
         name: displayName,
         email: data.user.email,
-        balance: data.user.balance || 0
+        balance: data.user.balance || 0,
       };
-      
+
       localStorage.setItem("user_data", JSON.stringify(userData));
 
       setLoading(false);
       navigate("/coin");
-      
+
       // Header ko refresh karne ke liye event
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event("storage"));
     } catch (err) {
       console.error("Login error:", err);
       setError("Server se connect nahi ho paya.");
@@ -76,7 +78,9 @@ const Login = () => {
         <div className="bg-white py-8 px-6 shadow-xl rounded-xl border border-gray-100">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Email Address
+              </label>
               <input
                 type="email"
                 required
@@ -88,7 +92,9 @@ const Login = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
                 type="password"
                 required
@@ -117,12 +123,15 @@ const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Account nahi hai?{" "}
-              <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <a
+                href="/register"
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
                 Register Now
               </a>
             </p>
           </div>
-        </div>     
+        </div>
       </div>
     </div>
   );

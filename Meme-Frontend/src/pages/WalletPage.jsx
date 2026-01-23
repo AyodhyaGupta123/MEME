@@ -2,13 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-/**
- * FULLY INTEGRATED TRADING WALLET PAGE
- * ✔ Full Page Scroll
- * ✔ Mobile + Hard Device Friendly
- * ✔ Professional Trading Theme
- * ✔ No Fixed Elements (Bottom content scrolls naturally)
- */
+import config from "../config/config";
 
 const WalletPage = () => {
   const navigate = useNavigate();
@@ -19,14 +13,15 @@ const WalletPage = () => {
   const fetchWalletData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("authToken") || localStorage.getItem("token");
+      const token =
+        localStorage.getItem("authToken") || localStorage.getItem("token");
 
       if (!token) {
         setError("Session expired. Please login again.");
         return;
       }
 
-      const res = await axios.get("http://localhost:5000/api/header/wallet", {
+      const res = await axios.get(`${config.API_BASE_URL}/header/wallet`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -67,7 +62,11 @@ const WalletPage = () => {
             ← Back
           </button>
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${error ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`} />
+            <span
+              className={`w-2 h-2 rounded-full ${
+                error ? "bg-red-500" : "bg-emerald-500 animate-pulse"
+              }`}
+            />
             <span className="text-xs uppercase tracking-widest text-slate-500">
               {error ? "Disconnected" : "Market Live"}
             </span>
@@ -79,9 +78,14 @@ const WalletPage = () => {
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-12">
         {/* PORTFOLIO */}
         <section className="bg-[#11151c] border border-white/5 rounded-2xl p-6">
-          <p className="text-xs uppercase tracking-widest text-slate-500 mb-2">Portfolio Value</p>
+          <p className="text-xs uppercase tracking-widest text-slate-500 mb-2">
+            Portfolio Value
+          </p>
           <h1 className="text-4xl md:text-5xl font-semibold text-white">
-            ${portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            $
+            {portfolioValue.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+            })}
             <span className="text-lg text-slate-400 ml-2">USD</span>
           </h1>
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -98,14 +102,18 @@ const WalletPage = () => {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ASSETS */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-sm uppercase tracking-wider text-slate-400">Assets</h3>
+            <h3 className="text-sm uppercase tracking-wider text-slate-400">
+              Assets
+            </h3>
 
             <div className="bg-[#11151c] border border-white/5 rounded-xl p-5 flex justify-between">
               <div>
                 <p className="text-white font-medium">USD Balance</p>
                 <p className="text-xs text-slate-500">Available</p>
               </div>
-              <p className="font-semibold text-white">${wallet.usdBalance.toLocaleString()}</p>
+              <p className="font-semibold text-white">
+                ${wallet.usdBalance.toLocaleString()}
+              </p>
             </div>
 
             <div className="bg-[#11151c] border border-white/5 rounded-xl p-5 flex justify-between">
@@ -113,13 +121,17 @@ const WalletPage = () => {
                 <p className="text-white font-medium">Pasa Meme Token</p>
                 <p className="text-xs text-slate-500">Tradable</p>
               </div>
-              <p className="font-semibold text-amber-400">{wallet.tokenBalance.toLocaleString()} PM</p>
+              <p className="font-semibold text-amber-400">
+                {wallet.tokenBalance.toLocaleString()} PM
+              </p>
             </div>
           </div>
 
           {/* ACCOUNT INFO */}
           <div className="bg-[#11151c] border border-white/5 rounded-xl p-6 space-y-4">
-            <h4 className="text-sm uppercase tracking-wider text-slate-400">Account</h4>
+            <h4 className="text-sm uppercase tracking-wider text-slate-400">
+              Account
+            </h4>
             <div className="flex justify-between text-sm">
               <span className="text-slate-500">KYC</span>
               <span className="text-emerald-500">Verified</span>
@@ -137,7 +149,9 @@ const WalletPage = () => {
 
         {/* ACTIVITY (BOTTOM - FULL SCROLL) */}
         <section className="space-y-3">
-          <h3 className="text-sm uppercase tracking-wider text-slate-400">Trade Activity</h3>
+          <h3 className="text-sm uppercase tracking-wider text-slate-400">
+            Trade Activity
+          </h3>
           <div className="bg-[#11151c] border border-white/5 rounded-xl overflow-x-auto">
             <table className="min-w-[600px] w-full text-sm">
               <thead className="bg-[#0e1117] text-slate-500">
@@ -149,9 +163,13 @@ const WalletPage = () => {
               </thead>
               <tbody>
                 <tr className="border-t border-white/5">
-                  <td className="px-4 py-3 text-slate-400">{new Date().toLocaleString()}</td>
+                  <td className="px-4 py-3 text-slate-400">
+                    {new Date().toLocaleString()}
+                  </td>
                   <td className="px-4 py-3 text-white">Wallet Sync</td>
-                  <td className="px-4 py-3 text-right text-emerald-500">Completed</td>
+                  <td className="px-4 py-3 text-right text-emerald-500">
+                    Completed
+                  </td>
                 </tr>
               </tbody>
             </table>

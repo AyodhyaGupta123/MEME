@@ -4,41 +4,54 @@ import Header from "../components/Header";
 import LeftSidebar from "./LeftSidebar";
 import { useNavigate } from "react-router-dom";
 
+import config from "../config/config";
+
 const MemeCoinsList = () => {
   const navigate = useNavigate();
-  
+
   const [memeCoins, setMemeCoins] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const symbols = ["DOGE", "SHIB", "PEPE", "WIF", "FLOKI", "BONK", "BRETT", "POPCAT", "MOG", "BOME"];
+  const symbols = [
+    "DOGE",
+    "SHIB",
+    "PEPE",
+    "WIF",
+    "FLOKI",
+    "BONK",
+    "BRETT",
+    "POPCAT",
+    "MOG",
+    "BOME",
+  ];
 
-  // ✅ Helper function to load local assets dynamically
   const getLocalIcon = (symbol) => {
     try {
-      // Ye path aapke folder structure ke hisab se hai: src/assets/coins/
-      return new URL(`../assets/coins/${symbol.toLowerCase()}.png`, import.meta.url).href;
-    } catch (error) {
-      // Fallback agar image na mile
-      return "https://via.placeholder.com/32"; 
+      return new URL(
+        `../assets/coins/${symbol.toLowerCase()}.png`,
+        import.meta.url
+      ).href;
+    } catch {
+      return "https://via.placeholder.com/32";
     }
   };
 
   const fetchLivePrices = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/prices/live/batch", {
-        symbols: symbols
-      });
-      
-      // Backend data ke sath local icon path attach karna
-      const dataWithIcons = response.data.map(coin => ({
+      const response = await axios.post(
+        `${config.API_BASE_URL}/prices/live/batch`,
+        { symbols }
+      );
+
+      const dataWithIcons = response.data.map((coin) => ({
         ...coin,
-        localIcon: getLocalIcon(coin.symbol)
+        localIcon: getLocalIcon(coin.symbol),
       }));
 
       setMemeCoins(dataWithIcons);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching live prices:", error);
+      console.error(error);
       setLoading(false);
     }
   };
@@ -51,12 +64,12 @@ const MemeCoinsList = () => {
 
   return (
     <div className="h-screen w-full bg-[#121418] text-[#eaeaeb] font-sans flex flex-col overflow-hidden">
-      <Header />
+      <Header link onRefresh={fetchLivePrices} />
 
       <div className="flex flex-1 overflow-hidden mb-6">
         <LeftSidebar />
+
         <div className="flex-1 flex flex-col">
-          {/* FIXED TABLE HEADER */}
           <div className="grid grid-cols-12 px-4 py-3 text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase border-b border-[#23262b] bg-[#121418] flex-shrink-0 z-10">
             <div className="col-span-6 sm:col-span-5">Coin Name</div>
             <div className="col-span-3 text-right">Price</div>
@@ -68,7 +81,9 @@ const MemeCoinsList = () => {
 
           <main className="flex-1 overflow-y-auto scrollbar-hide">
             {loading && memeCoins.length === 0 ? (
-              <div className="p-10 text-center text-gray-500">Loading Market Data...</div>
+              <div className="p-10 text-center text-gray-500">
+                Loading Market Data...
+              </div>
             ) : (
               <div className="divide-y divide-[#23262b]">
                 {memeCoins.map((coin) => (
@@ -77,14 +92,14 @@ const MemeCoinsList = () => {
                     onClick={() => navigate("/dashboard")}
                     className="grid grid-cols-12 px-4 py-5 items-center hover:bg-[#1e2329] transition-all active:bg-[#1e2329] active:scale-[0.99] cursor-pointer"
                   >
-                    {/* Icon + Name */}
                     <div className="col-span-6 sm:col-span-5 flex items-center gap-3">
-                      {/* ✅ Changed from coin.icon to coin.localIcon */}
                       <img
-                        src={coin.localIcon} 
+                        src={coin.localIcon}
                         alt={coin.symbol}
                         className="w-8 h-8 rounded-full bg-[#2a2e33] p-1 shadow-md object-contain"
-                        onError={(e) => { e.target.src = "https://via.placeholder.com/32"; }}
+                        onError={(e) =>
+                          (e.target.src = "https://via.placeholder.com/32")
+                        }
                       />
                       <div className="flex flex-col min-w-0">
                         <span className="text-sm font-bold truncate">
@@ -96,7 +111,6 @@ const MemeCoinsList = () => {
                       </div>
                     </div>
 
-                    {/* Price */}
                     <div className="col-span-3 text-right">
                       <div className="text-sm font-semibold tracking-tight">
                         {coin.price}
@@ -106,7 +120,6 @@ const MemeCoinsList = () => {
                       </div>
                     </div>
 
-                    {/* Change */}
                     <div
                       className={`col-span-3 sm:col-span-2 text-right text-xs font-bold ${
                         coin.up ? "text-[#02c076]" : "text-[#f6465d]"
@@ -118,7 +131,6 @@ const MemeCoinsList = () => {
                       </div>
                     </div>
 
-                    {/* Trade Button */}
                     <div className="hidden sm:block sm:col-span-2 text-right">
                       <button
                         onClick={(e) => {
@@ -138,16 +150,18 @@ const MemeCoinsList = () => {
         </div>
       </div>
 
-      {/* Bottom Nav for Mobile */}
       <footer className="sm:hidden h-14 bg-[#1e2329] border-t border-gray-800 flex items-center justify-around flex-shrink-0">
         <div className="text-yellow-500 text-[10px] flex flex-col items-center">
-          <span>🏠</span>Home
+          <span>🏠</span>
+          Home
         </div>
         <div className="text-gray-500 text-[10px] flex flex-col items-center">
-          <span>📈</span>Markets
+          <span>📈</span>
+          Markets
         </div>
         <div className="text-gray-500 text-[10px] flex flex-col items-center">
-          <span>💰</span>Wallet
+          <span>💰</span>
+          Wallet
         </div>
       </footer>
     </div>

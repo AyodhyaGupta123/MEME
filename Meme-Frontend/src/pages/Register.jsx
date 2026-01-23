@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import config from "../config/config";
+
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -38,7 +40,7 @@ const Register = () => {
       }
 
       // API Call
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${config.API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -62,7 +64,9 @@ const Register = () => {
       navigate("/dashboard");
     } catch (err) {
       console.error("Registration error:", err);
-      setError("Server se connect nahi ho paya. Kripya phir se koshish karein.");
+      setError(
+        "Server se connect nahi ho paya. Kripya phir se koshish karein."
+      );
       setLoading(false);
     }
   };
@@ -80,7 +84,9 @@ const Register = () => {
           <form className="space-y-5" onSubmit={handleRegister}>
             {/* Username Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Username</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Username
+              </label>
               <input
                 type="text"
                 name="username"
@@ -94,7 +100,9 @@ const Register = () => {
 
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Email Address
+              </label>
               <input
                 type="email"
                 name="email"
@@ -108,7 +116,9 @@ const Register = () => {
 
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
                 type="password"
                 name="password"
@@ -141,7 +151,10 @@ const Register = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Pehle se account hai?{" "}
-              <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <a
+                href="/login"
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
                 Login karein
               </a>
             </p>
@@ -156,7 +169,9 @@ const Register = () => {
             { label: "Coins", val: "100+" },
           ].map((item, i) => (
             <div key={i} className="bg-gray-100 p-2 rounded-lg text-center">
-              <p className="text-[10px] text-gray-500 uppercase">{item.label}</p>
+              <p className="text-[10px] text-gray-500 uppercase">
+                {item.label}
+              </p>
               <p className="text-sm font-bold text-gray-800">{item.val}</p>
             </div>
           ))}
