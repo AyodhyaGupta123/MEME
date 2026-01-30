@@ -42,6 +42,7 @@ const Register = () => {
       // API Call
       const response = await fetch(`${config.API_BASE_URL}/api/auth/register`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
